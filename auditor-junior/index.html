@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Auditor Júnior</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+  /* layout: one pixel diorama on the left, the slide's words and controls on the right; stacks on phones */
+  :root {
+    --paper: #ffffff; --ink: #1c1b19; --muted: #6b675f; --soft: #f4f3ef; --line: #d9d6ce;
+    --signal: #ffd60a; --gold: #e8c83e; --ok: #2f6b45; --bad: #a8382b;
+    --display: "Pixelify Sans", ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+    --body: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { margin: 0; }
+  body { background: var(--paper); color: var(--ink); font: 18px/1.6 var(--body); }
+  .deck { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-block: 14px; color: var(--muted); font-size: 15px; }
+  .brand { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--ink); }
+  .count { font-variant-numeric: tabular-nums; }
+  .view { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 64px); min-height: 0; }
+  .stage { position: relative; min-width: 0; min-height: 280px; overflow: hidden; }
+  #c { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: block; image-rendering: pixelated; }
+  .panel { min-width: 0; max-width: 42rem; overflow-y: auto; align-self: center; max-height: 100%; padding-block: 8px 24px; }
+  .slide { display: grid; gap: 14px; }
+  .slide > p { margin: 0; max-width: 62ch; }
+  .eyebrow { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+  h1, h2 { margin: 0; font-family: var(--display); font-weight: 700; line-height: 1.05; text-wrap: balance; }
+  h1 { font-size: clamp(56px, 7vw, 100px); }
+  h2 { font-size: clamp(38px, 4.4vw, 60px); }
+  .lead { font-size: 22px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 15px; }
+  .try { display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--ink); margin-top: 4px; }
+  .label { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button, select, input { font: inherit; }
+  .chip { font-size: 16px; line-height: 1.3; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); padding: 7px 11px; cursor: pointer; }
+  .chip:hover { background: var(--soft); }
+  .chip[aria-pressed="true"], .chip[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+  .ghost { font-size: 16px; border: 1px dashed var(--line); color: var(--muted); padding: 7px 11px; }
+  .go { font-family: var(--display); font-weight: 700; font-size: 22px; border: 2px solid var(--ink); background: var(--signal); color: var(--ink);
+    padding: 10px 20px; cursor: pointer; box-shadow: 4px 4px 0 var(--ink); justify-self: start; }
+  .go:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .go[disabled] { background: var(--soft); color: var(--muted); box-shadow: none; cursor: default; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+  .box { margin: 0; background: var(--soft); padding: 12px 14px; font-size: 16px; line-height: 1.6; }
+  .box ol { margin: 0; padding-left: 20px; }
+  .box mark { background: var(--signal); color: var(--ink); }
+  .card { border: 1px solid var(--ink); padding: 12px 14px; display: grid; gap: 8px; }
+  .card dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; }
+  .card dt { color: var(--muted); }
+  .card dd { margin: 0; }
+  .tag { background: var(--paper); display: inline-block; font-size: 14px; padding: 1px 7px; border: 1px solid currentColor; white-space: nowrap; }
+  .tag.ok { color: var(--ok); } .tag.bad { color: var(--bad); }
+  .answer { min-height: 3.3em; margin: 0; }
+  .cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .case { text-align: left; display: grid; gap: 2px; font-size: 15px; line-height: 1.35; padding: 8px 9px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; }
+  .case b { font-size: 17px; }
+  .case .tag { justify-self: start; }
+  .case[aria-pressed="true"] { border-color: var(--ink); background: var(--gold); }
+  .meter { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .meter b { font-family: var(--display); font-size: 40px; font-variant-numeric: tabular-nums; }
+  .squares { display: flex; flex-wrap: wrap; gap: 4px; }
+  .squares i { width: 24px; height: 24px; border: 1px solid var(--ink); }
+  .squares i.ok { background: var(--ok); } .squares i.bad { background: var(--paper); background-image: linear-gradient(45deg, transparent 44%, var(--bad) 44% 56%, transparent 56%), linear-gradient(-45deg, transparent 44%, var(--bad) 44% 56%, transparent 56%); }
+  pre { margin: 0; overflow-x: auto; background: var(--ink); color: #f4f3ef; padding: 12px 14px; font: 15px/1.6 var(--body); }
+  label.field { display: grid; gap: 4px; font-size: 15px; color: var(--muted); }
+  select { border: 1px solid var(--ink); background: var(--paper); color: var(--ink); padding: 6px 8px; }
+  input[type="range"] { width: 100%; accent-color: var(--ink); }
+  .alert { border: 2px solid var(--bad); padding: 10px 12px; display: grid; gap: 10px; }
+  .alert p { margin: 0; color: var(--bad); font-weight: 600; }
+  .cycle { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: step; }
+  .cycle button { width: 100%; text-align: left; display: grid; grid-template-columns: 2.2em minmax(0, 1fr); gap: 8px; align-items: baseline;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 9px 12px; cursor: pointer; font-size: 17px; line-height: 1.45; }
+  .cycle button:hover { border-color: var(--ink); }
+  .cycle .n { font-family: var(--display); font-weight: 700; font-size: 28px; }
+  .cycle li.here button { background: var(--gold); border-color: var(--ink); }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 12px max(12px, env(safe-area-inset-bottom, 0px)); background: var(--paper); }
+  .navbtn { font-size: 17px; color: var(--ink); background: none; border: 1px solid var(--ink); padding: 8px 14px; cursor: pointer; }
+  .navbtn:hover { background: var(--soft); }
+  .navbtn[disabled] { color: var(--line); border-color: var(--line); cursor: default; background: none; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dots button { width: 14px; height: 14px; padding: 0; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; }
+  .dots button[aria-current="step"] { background: var(--ink); }
+  @media (max-width: 860px) {
+    .deck { height: auto; min-height: 100%; }
+    .view { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .stage { min-height: 0; margin-inline: -16px; }
+    .panel { max-height: none; overflow: visible; max-width: none; }
+    .nav { position: sticky; bottom: 0; border-top: 1px solid var(--line); }
+    h1 { font-size: 56px; }
+    body { font-size: 17px; }
+  }
+  @media (max-width: 420px) { .navbtn { padding: 8px 10px; font-size: 15px; } .dots { gap: 4px; } .dots button { width: 10px; height: 10px; } }
+</style>
+</head>
+<body>
+<div class="deck">
+  <header class="top">
+    <span class="brand">Auditor Júnior</span>
+    <span class="count" id="count">1 / 9</span>
+  </header>
+  <main class="view">
+    <div class="stage" id="stage"><canvas id="c" role="img" aria-label="Cena em pixel do slide atual"></canvas></div>
+    <div class="panel" id="panel">
+
+      <section class="slide" id="inicio" data-title="Início" data-scene="Uma pequena sala ao ar livre: o auditor júnior em pé atrás da mesa, com papéis, um servidor e um prédio em volta.">
+        <p class="eyebrow">Apresentação</p>
+        <h1>Auditor Júnior</h1>
+        <p class="lead">Um aplicativo em que você mesmo cria um agente de análise, ensina esse agente com exemplos de respostas certas e depois coloca ele para trabalhar.</p>
+        <p>Cada tela traz uma ideia e algo para você testar. Não precisa saber programar nem entender de inteligência artificial.</p>
+        <button class="go" type="button" data-go="agente">Começar</button>
+        <p class="small muted">Dica: as setas ← e → do teclado também passam os slides.</p>
+      </section>
+
+      <section class="slide" id="agente" data-title="O que é um agente" data-scene="O auditor júnior na mesa. À esquerda, uma pilha de documentos; à direita, um quadro onde aparece a resposta." hidden>
+        <p class="eyebrow">A ideia</p>
+        <h2>O que é um agente</h2>
+        <p>O nome ajuda: pense num auditor recém-contratado. Ele recebe uma tarefa por escrito, lê o material que você entrega e devolve uma resposta.</p>
+        <p>A tarefa por escrito se chama <b>instruções</b>. São elas que decidem se a resposta sai boa ou ruim.</p>
+        <div class="try">
+          <p class="label">Teste: escolha as instruções e entregue o documento</p>
+          <div class="row" role="group" aria-label="Instruções">
+            <button class="chip" type="button" data-instr="vagas" aria-pressed="false">Instruções vagas</button>
+            <button class="chip" type="button" data-instr="claras" aria-pressed="true">Instruções claras</button>
+          </div>
+          <p class="box" id="instr-text"></p>
+          <div class="card"><dl><dt>Documento</dt><dd>Nota fiscal 1043 · R$ 18.400,00 · fornecedor sem cadastro</dd></dl></div>
+          <button class="go" type="button" id="deliver">Entregar o documento</button>
+          <p class="answer" id="answer" aria-live="polite"><span class="muted">A resposta aparece aqui.</span></p>
+        </div>
+      </section>
+
+      <section class="slide" id="montar" data-title="Monte o seu agente" data-scene="O auditor na mesa recebe a entrada escolhida pela esquerda e entrega o resultado à direita." hidden>
+        <p class="eyebrow">Passo 1 · Criar</p>
+        <h2>Monte o seu agente</h2>
+        <p>Tudo acontece na tela, sem programar. Você escolhe o que o agente faz e de onde vem o material que ele analisa.</p>
+        <div class="try">
+          <p class="label">Tipo de aplicação</p>
+          <div class="row" role="group" aria-label="Tipo de aplicação">
+            <button class="chip" type="button" data-app="sm" aria-pressed="true">Situação Monitorada</button>
+            <button class="chip" type="button" data-app="cl" aria-pressed="false">Classificação</button>
+            <span class="ghost">e outros</span>
+          </div>
+          <p class="label">Tipo de entrada</p>
+          <div class="row" role="group" aria-label="Tipo de entrada">
+            <button class="chip" type="button" data-input="arquivos" aria-pressed="true">Arquivos</button>
+            <button class="chip" type="button" data-input="banco" aria-pressed="false">Banco de dados</button>
+            <button class="chip" type="button" data-input="cnpj" aria-pressed="false">CNPJ</button>
+            <span class="ghost">e outros</span>
+          </div>
+          <div class="card" aria-live="polite">
+            <dl>
+              <dt>Recebe</dt><dd id="build-in"></dd>
+              <dt>Faz</dt><dd id="build-do"></dd>
+              <dt>Exemplo</dt><dd id="build-ex"></dd>
+            </dl>
+          </div>
+          <p class="small muted" id="build-scene"></p>
+          <p class="small muted">Os exemplos desta apresentação são ilustrativos.</p>
+        </div>
+      </section>
+
+      <section class="slide" id="gabarito" data-title="O padrão ouro" data-scene="Doze caixas no chão, uma para cada caso. As caixas douradas estão no padrão ouro." hidden>
+        <p class="eyebrow">Passo 2 · Ensinar</p>
+        <h2>O padrão ouro</h2>
+        <p>Para ensinar, você separa casos reais e anota a resposta certa de cada um. Esse conjunto é o <b>padrão ouro</b>.</p>
+        <p>Ele funciona como o gabarito de uma prova: é com ele que o app confere se o agente acertou.</p>
+        <div class="try">
+          <p class="label">Clique nos casos para pôr ou tirar do padrão ouro</p>
+          <div class="cases" id="cases"></div>
+          <div class="meter"><b id="gold-count">0</b><span>de 12 casos no padrão ouro</span>
+            <button class="chip" type="button" id="gold-all">Incluir todos</button></div>
+          <p id="gold-tip" aria-live="polite"></p>
+          <p class="small muted">Neste exemplo, a resposta certa é Alerta quando o fornecedor não tem cadastro ou quando o valor passa de R$ 10.000,00. Nota cancelada é sempre OK.</p>
+        </div>
+      </section>
+
+      <section class="slide" id="otimizar" data-title="Otimização" data-scene="Colunas, uma por rodada de otimização. A altura de cada coluna é o número de acertos; a dourada é a melhor até agora." hidden>
+        <p class="eyebrow">Passo 3 · Otimizar</p>
+        <h2>Otimização</h2>
+        <p>Com o gabarito pronto, o app faz o trabalho repetitivo. Ele roda o agente em todos os casos, compara cada resposta com o gabarito, vê onde errou e reescreve as instruções para corrigir. Depois testa de novo.</p>
+        <p>Cada volta é uma rodada. No fim, o app fica com a versão que mais acertou.</p>
+        <div class="try">
+          <div class="row">
+            <button class="go" type="button" id="opt-run">Rodar mais uma rodada</button>
+            <button class="chip" type="button" id="opt-reset">Recomeçar</button>
+          </div>
+          <p id="opt-status" aria-live="polite"></p>
+          <div class="squares" id="opt-squares" aria-hidden="true"></div>
+          <p class="small" id="opt-change"></p>
+          <p class="label">Instruções desta rodada</p>
+          <div class="box"><ol id="opt-instr"></ol></div>
+          <p class="small muted">Na cena, cada coluna é uma rodada e a linha amarela marca 12 acertos.</p>
+          <p id="opt-note" hidden>O agente acertou os 12 casos. Mas será que aprendeu a regra ou só decorou estes 12? A próxima tela mostra como o app confere isso.</p>
+        </div>
+      </section>
+
+      <section class="slide" id="usar" data-title="Colocar para trabalhar" data-scene="O auditor no centro, ligado a três estações: uma tela, um relógio de agendamento e um servidor que recebe chamadas de outros sistemas." hidden>
+        <p class="eyebrow">Passo 4 · Usar</p>
+        <h2>Colocar para trabalhar</h2>
+        <p>Depois de otimizado, o agente está pronto para o dia a dia. Ele pode ser usado de três jeitos.</p>
+        <div class="try">
+          <div class="row" role="tablist" aria-label="Formas de uso">
+            <button class="chip" type="button" role="tab" id="tab-tela" data-use="tela" aria-selected="true" aria-controls="use-tela">Pela tela</button>
+            <button class="chip" type="button" role="tab" id="tab-agenda" data-use="agenda" aria-selected="false" aria-controls="use-agenda">Agendado</button>
+            <button class="chip" type="button" role="tab" id="tab-api" data-use="api" aria-selected="false" aria-controls="use-api">Por API</button>
+          </div>
+          <div role="tabpanel" id="use-tela" aria-labelledby="tab-tela" class="slide">
+            <p>Alguém da equipe abre o Auditor Júnior, envia o material e recebe a resposta na hora.</p>
+            <div class="card">
+              <dl><dt>Arquivo</dt><dd>nf_2087.pdf · R$ 14.200,00</dd></dl>
+              <button class="go" type="button" id="use-run">Analisar</button>
+              <p class="answer" id="use-answer" aria-live="polite"></p>
+            </div>
+          </div>
+          <div role="tabpanel" id="use-agenda" aria-labelledby="tab-agenda" class="slide" hidden>
+            <p>O agente roda sozinho no horário que você escolher e analisa o que chegou desde a última vez. Ninguém precisa lembrar de apertar o botão.</p>
+            <div class="row">
+              <label class="field" for="freq">Frequência
+                <select id="freq">
+                  <option value="dia">Todo dia</option>
+                  <option value="semana" selected>Toda segunda-feira</option>
+                  <option value="mes">Todo dia 1º do mês</option>
+                </select>
+              </label>
+              <label class="field" for="hora">Horário
+                <select id="hora">
+                  <option value="6">06:00</option>
+                  <option value="8" selected>08:00</option>
+                  <option value="18">18:00</option>
+                </select>
+              </label>
+            </div>
+            <p class="card" id="agenda-sum" aria-live="polite"></p>
+          </div>
+          <div role="tabpanel" id="use-api" aria-labelledby="tab-api" class="slide" hidden>
+            <p>Outros sistemas e scripts chamam o agente direto, sem abrir a tela. Assim ele entra num processo que já existe, como o sistema de compras ou uma rotina automática.</p>
+<pre><code>POST /agentes/verificador-nf/executar
+{ "cnpj": "12.345.678/0001-95" }
+
+resposta:
+{ "resultado": "Alerta",
+  "motivo": "fornecedor sem cadastro" }</code></pre>
+            <p class="small muted">Exemplo ilustrativo. O endereço e os campos reais dependem de como o app está configurado.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="acompanhar" data-title="Qualidade ao longo do tempo" data-scene="Uma coluna por semana com a nota do agente e uma linha amarela no limite de 85%. Colunas vermelhas ficaram abaixo do limite." hidden>
+        <p class="eyebrow">Passo 5 · Acompanhar</p>
+        <h2>Qualidade ao longo do tempo</h2>
+        <p>As coisas mudam: chega um modelo novo de nota fiscal, uma regra é alterada, aparecem fornecedores diferentes. Um agente que ia bem pode começar a errar aos poucos.</p>
+        <p>Por isso o app continua medindo a qualidade das respostas semana a semana. Se a nota cair abaixo do limite que você definiu, dá para ver na hora e otimizar de novo.</p>
+        <div class="try">
+          <label class="field" for="week">Arraste para avançar as semanas</label>
+          <input type="range" id="week" min="1" max="12" value="6">
+          <p id="week-read" aria-live="polite"></p>
+          <p class="small" id="week-event"></p>
+          <div class="alert" id="week-alert" hidden>
+            <p>A nota caiu abaixo do limite.</p>
+            <button class="go" type="button" id="week-fix">Otimizar de novo</button>
+          </div>
+          <p class="small muted">Na cena, cada coluna é uma semana e a linha amarela marca o limite de 85%.</p>
+        </div>
+      </section>
+
+      <section class="slide" id="ciclo" data-title="O ciclo completo" data-scene="Cinco estações em roda, uma para cada passo. O auditor caminha de uma para a outra sem parar." hidden>
+        <p class="eyebrow">Resumo</p>
+        <h2>O ciclo completo</h2>
+        <p>O Auditor Júnior junta tudo num ciclo. Clique num passo para rever a explicação.</p>
+        <ol class="cycle" id="cycle">
+          <li><button type="button" data-go="montar"><span class="n">1</span><span><b>Criar</b>: escolher o tipo de aplicação e de onde vêm os dados.</span></button></li>
+          <li><button type="button" data-go="gabarito"><span class="n">2</span><span><b>Ensinar</b>: montar o padrão ouro com as respostas certas.</span></button></li>
+          <li><button type="button" data-go="otimizar"><span class="n">3</span><span><b>Otimizar</b>: o app reescreve as instruções e confere com validação cruzada.</span></button></li>
+          <li><button type="button" data-go="usar"><span class="n">4</span><span><b>Usar</b>: pela tela, por agendamento ou por API.</span></button></li>
+          <li><button type="button" data-go="acompanhar"><span class="n">5</span><span><b>Acompanhar</b>: medir a qualidade e otimizar de novo quando ela cair.</span></button></li>
+        </ol>
+        <p class="muted">Quando a qualidade cai no passo 5, o ciclo volta para o passo 3.</p>
+        <button class="go" type="button" data-go="inicio">Voltar ao início</button>
+      </section>
+
+    </div>
+  </main>
+  <footer class="nav">
+    <button class="navbtn" type="button" id="prev">← Anterior</button>
+    <div class="dots" id="dots"></div>
+    <button class="navbtn" type="button" id="next">Próximo →</button>
+  </footer>
+</div>
+
+<script>window.PP_SCENE = { scale: 14, originY: 20, shadowX: 1.3, shadowY: -.12 };</script>
+<script src="../engine.js"></script>
+<script src="scenes.js"></script>
+<script src="deck.js"></script>
+</body>
+</html>
